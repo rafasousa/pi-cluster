@@ -40,6 +40,12 @@
         dest: "~/k3s_install.sh"
         mode: a+x
 
+    - name: Install required dependencies
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present
+
+
 - name: Configure storage node.
   hosts: storage
   gather_facts: false
@@ -57,6 +63,7 @@
   tasks:
     - name: Set up storage.
       include_tasks: tasks/storage/{{ storage_type }}.yml
+
 
 - name: Configure the control plane.
   hosts: control_plane
@@ -82,23 +89,14 @@
     - name: Set node_token fact.
       ansible.builtin.set_fact:
         node_token: "{{ node_token_output.stdout_lines[0] }}"
-      when: node_token_output.stdout_lines | length > 0
-
-    - name: Get stats of a EXTERNALLY-MANAGED file
-      ansible.builtin.stat:
-        path: /usr/lib/python3.11/EXTERNALLY-MANAGED
-      register: python_stat
-
-    - name: Move the EXTERNALLY-MANAGED to EXTERNALLY-MANAGED.old so can install python3
-      ansible.builtin.shell: >-
-        mv /usr/lib/python3.11/EXTERNALLY-MANAGED /usr/lib/python3.11/EXTERNALLY-MANAGED.old
-      when: python_stat.stat.exists
 
     - name: Ensure required dependencies are installed.
       ansible.builtin.package:
         name:
           - python3-pip
           - python3-setuptools
+          - python3-openshift
+          - python3-yaml
           - build-essential
           - golang
           - git
@@ -111,13 +109,6 @@
         state: absent
       become: true
 
-    - name: Ensure required Python libraries are installed.
-      ansible.builtin.pip:
-        name:
-          - openshift
-          - pyyaml
-        state: present
-      become: true
 
 - name: Configure the worker nodes.
   hosts: nodes
@@ -136,7 +127,6 @@
       args:
         chdir: "~"
         creates: /var/lib/rancher/k3s/agent/kubelet.kubeconfig
-      when: hostvars[groups['control_plane'][0]].node_token is defined
 
 - name: Set up Helm.
   import_playbook: tasks/kubernetes/helm.yml
@@ -150,6 +140,6 @@
   import_playbook: tasks/kubernetes/prometheus.yml
   tags: ['prometheus']
 
-# - name: Set up Drupal.
-#   import_playbook: tasks/kubernetes/drupal.yml
-#   tags: ['drupal']
+- name: Set up Drupal.
+  import_playbook: tasks/kubernetes/drupal.yml
+  tags: ['drupal']
