@@ -1,6 +1,6 @@
 # Raspberry Pi Cluster
 
-[![CI](https://github.com/geerlingguy/pi-cluster/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/geerlingguy/pi-cluster/actions?query=workflow%3ACI)
+[![CI](https://github.com/geerlingguy/pi-cluster/actions/workflows/ci.yml/badge.svg)](https://github.com/geerlingguy/pi-cluster/actions/workflows/ci.yml)
 
 <p align="center"><a href="https://www.youtube.com/watch?v=kgVz4-SEhbE"><img src="images/turing-pi-2-hero.jpg?raw=true" width="500" height="auto" alt="Turing Pi 2 - Raspberry Pi Compute Module Cluster" /></a></p>
 
@@ -84,7 +84,15 @@ This configuration is not yet integrated into the general K3s setup.
 
 ### Cluster configuration and K3s installation
 
-Run the playbook:
+First, make sure Ansible requirements are installed:
+
+```
+ansible-galaxy install -r requirements.yml --force
+```
+
+Configure static networking, if your cluster nodes don't already have static IP addresses—see later section in this README.
+
+Then, run the playbook:
 
 ```
 ansible-playbook main.yml
@@ -101,6 +109,20 @@ You can also log into node 1, switch to the root user account (`sudo su`), then 
 The Kubernetes Ingress object for Drupal (how HTTP requests from outside the cluster make it to Drupal) can be found by running `kubectl get ingress -n drupal`. Take the IP address or hostname there and enter it in your browser on a computer on the same network, and voila! You should see Drupal's installer.
 
 K3s' `kubeconfig` file is located at `/etc/rancher/k3s/k3s.yaml`. If you'd like to manage the cluster from other hosts (or using a tool like Lens), copy the contents of that file, replacing `localhost` with the IP address or hostname of the control plane node, and paste the contents into a file `~/.kube/config`.
+
+Alternatively, if you'd like to use [k9s](https://k9scli.io) on the main Pi itself, symlink the rancher kubeconfig file into a location where k9s expects to see it:
+
+```
+# (perform all commands as root user)
+# Download and install K9s
+wget https://github.com/derailed/k9s/releases/latest/download/k9s_linux_arm64.deb && apt install ./k9s_linux_arm64.deb && rm k9s_linux_arm64.deb
+
+# Symlink K3s kubeconfig into root user's home directory
+ln -s /etc/rancher/k3s/k3s.yaml ~/.kube/config
+
+# Launch k9s
+k9s
+```
 
 ### Upgrading the cluster
 
