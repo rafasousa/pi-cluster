@@ -7,10 +7,18 @@
     state: directory
     mode: 0777
 
+- name: Ensure /mnt/k3s-data/server exists
+  ansible.builtin.file:
+    path: /{{ storage_nfs_dir }}/{{ storage_k3s_server_dir }}
+    state: directory
+    mode: 0755
+  when: storage_k3s_server_bind_enabled
+
 - name: Ensure the NFS volume is mounted from "external storage".
   ansible.posix.mount:
     src: "{{ storage_nfs_mount_drive }}"
-    path: "/{{ storage_nfs_dir }}/{{ storage_nfs_share_name }}"
+    path: "/{{ storage_nfs_dir }}"
+    opts: defaults,nofail,x-systemd.device-timeout=10 
     fstype: ext4
     state: mounted
   when: storage_nfs_mount_drive_enable
@@ -19,6 +27,16 @@
   ansible.builtin.apt:
     name: nfs-kernel-server
     state: present
+    update_cache: yes
+
+- name: Bind mount K3s server directory
+  ansible.posix.mount:
+    src: /{{ storage_nfs_dir }}/{{ storage_k3s_server_dir }}
+    path: /var/lib/rancher/k3s/server
+    fstype: none
+    opts: bind,nofail
+    state: mounted
+  when: storage_k3s_server_bind_enabled
 
 - name: Configure NFS exports.
   ansible.builtin.lineinfile:
