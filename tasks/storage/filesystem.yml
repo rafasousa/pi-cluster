@@ -2,12 +2,10 @@
 - name: Ensure NFS share directory exists.
   ansible.builtin.file:
     dest: "/{{ storage_nfs_dir }}/{{ storage_nfs_share_name }}"
-    owner: root
-    group: "{{ ansible_user }}"
     state: directory
     mode: 0777
 
-- name: Ensure /mnt/k3s-data/server exists
+- name: Ensure storage k3s server dirr exists
   ansible.builtin.file:
     path: /{{ storage_nfs_dir }}/{{ storage_k3s_server_dir }}
     state: directory
@@ -18,8 +16,8 @@
   ansible.posix.mount:
     src: "{{ storage_nfs_mount_drive }}"
     path: "/{{ storage_nfs_dir }}"
-    opts: defaults,nofail,x-systemd.device-timeout=10 
-    fstype: ext4
+    opts: defaults,nofail,noatime
+    fstype: "{{ storage_nfs_mount_fstype }}"
     state: mounted
   when: storage_nfs_mount_drive_enable
 

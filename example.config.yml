@@ -3,8 +3,14 @@
 storage_type: filesystem  # options: 'filesystem', 'zfs'
 storage_zfs_pool_name: zfsdata
 # storage_nfs_dir: '{{ storage_zfs_pool_name }}'  # Use this for 'zfs'
-storage_nfs_dir: "srv"  # Use this for 'filesystem'
-storage_nfs_share_name: nfsshare
+storage_nfs_dir: "mnt/k3s" # Use this for 'filesystem'
+storage_nfs_share_name: k3s-pvc # /mnt/k3s/k3s-pvc
+storage_nfs_mount_drive: /dev/sda1
+storage_nfs_mount_fstype: vfat #ext4
+storage_nfs_mount_drive_enable: true
+
+storage_k3s_server_dir: "k3s-data" # /mnt/k3s/k3s-data
+storage_k3s_server_bind_enabled: false
 
 # Drupal installation options.
 drupal_image: drupal:10.2-apache
